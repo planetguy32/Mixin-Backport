@@ -268,6 +268,7 @@ public class CallbackInjector extends Injector {
         LocalVariableNode[] locals = null;
 
         if (this.localCapture.isCaptureLocals() || this.localCapture.isPrintLocals()) {
+            System.out.println("Capturing locals!");
             locals = Locals.getLocalsAt(this.classNode, target.method, node);
         }
 
