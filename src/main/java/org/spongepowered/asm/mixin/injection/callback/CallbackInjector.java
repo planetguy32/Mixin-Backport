@@ -268,7 +268,7 @@ public class CallbackInjector extends Injector {
         LocalVariableNode[] locals = null;
 
         if (this.localCapture.isCaptureLocals() || this.localCapture.isPrintLocals()) {
-            System.out.println("Capturing locals!");
+            this.logger.warn("Maybe now it'll work???");
             locals = Locals.getLocalsAt(this.classNode, target.method, node);
         }
 
@@ -277,7 +277,7 @@ public class CallbackInjector extends Injector {
 
     /**
      * Generate the actual bytecode for the callback
-     * 
+     *
      * @param callback callback handle
      */
     private void inject(final Callback callback) {
@@ -285,7 +285,7 @@ public class CallbackInjector extends Injector {
             this.printLocals(callback);
             return;
         }
-        
+
         // The actual callback method, to start with this is set to the handler
         // method but we will redirect to our generated handler if the signature
         // is invalid and we have to generate an error handler stub method
@@ -309,7 +309,7 @@ public class CallbackInjector extends Injector {
                 } else {
                     // No matching method, generate a message to bitch about it
                     String message = this.generateBadLVTMessage(callback);
-                    
+
                     switch (this.localCapture) {
                         case CAPTURE_FAILEXCEPTION:
                             this.logger.error("Injection error: {}", message);
@@ -328,18 +328,18 @@ public class CallbackInjector extends Injector {
                         + " but found " + this.methodNode.desc);
             }
         }
-        
+
         this.createCallbackInfo(callback);
         this.invokeCallback(callback, callbackMethod);
         this.injectCancellationCode(callback);
-        
+
         callback.inject();
         this.info.getTargets().clear();
     }
 
     /**
      * Generate the "bad local variable table" message
-     * 
+     *
      * @param callback callback handle
      * @return generated message
      */
@@ -354,7 +354,7 @@ public class CallbackInjector extends Injector {
 
     /**
      * Generates a method which throws an error
-     * 
+     *
      * @param callback callback handle
      * @param errorClass error class to throw
      * @param message message for the error
@@ -372,10 +372,10 @@ public class CallbackInjector extends Injector {
         insns.add(new InsnNode(Opcodes.ATHROW));
         return method;
     }
-    
+
     /**
      * Pretty-print local variable information to stderr
-     * 
+     *
      * @param callback callback handle
      */
     private void printLocals(final Callback callback) {
@@ -383,7 +383,7 @@ public class CallbackInjector extends Injector {
         SignaturePrinter methodSig = new SignaturePrinter(callback.target.method, callback.argNames);
         SignaturePrinter handlerSig = new SignaturePrinter(this.methodNode.name, callback.target.returnType, args, callback.argNames);
         handlerSig.setModifiers(this.methodNode);
-        
+
         PrettyPrinter printer = new PrettyPrinter();
         printer.add("%20s : %s", "Target Class", this.classNode.name.replace('/', '.'));
         printer.add("%20s : %s", "Target Method", methodSig);
@@ -419,7 +419,7 @@ public class CallbackInjector extends Injector {
 
         callback.add(new TypeInsnNode(Opcodes.NEW, callback.target.callbackInfoClass), true, false);
         callback.add(new InsnNode(Opcodes.DUP), true, true);
-        
+
         this.invokeCallbackInfoCtor(callback);
         callback.add(new VarInsnNode(Opcodes.ASTORE, callback.marshallVar));
     }
@@ -429,14 +429,14 @@ public class CallbackInjector extends Injector {
      * we can expect the *original* return value to be on the stack, then we dup
      * the return value into a local var so we can push it later when we invoke
      * the ReturnEventInfo ctor
-     * 
+     *
      * @param callback callback handle
      */
     private void dupReturnValue(final Callback callback) {
         if (!callback.isAtReturn) {
             return;
         }
-        
+
         callback.add(new InsnNode(Opcodes.DUP));
         callback.add(new VarInsnNode(callback.target.returnType.getOpcode(Opcodes.ISTORE), callback.marshallVar));
     }
@@ -469,29 +469,29 @@ public class CallbackInjector extends Injector {
 
         // Push the target method's parameters onto the stack
         ASMHelper.loadArgs(callback.target.arguments, callback, this.isStatic ? 0 : 1);
-        
+
         // Push the callback info onto the stack
         callback.add(new VarInsnNode(Opcodes.ALOAD, callback.marshallVar));
-        
+
         // (Maybe) push the locals onto the stack
         if (callback.canCaptureLocals) {
             Locals.loadLocals(callback.localTypes, callback, callback.frameSize);
         }
-        
+
         // Call the callback!
         this.invokeMethod(callback, callbackMethod);
     }
 
     /**
      * if (e.isCancelled()) return e.getReturnValue();
-     * 
+     *
      * @param callback callback handle
      */
     protected void injectCancellationCode(final Callback callback) {
         if (!this.cancellable) {
             return;
         }
-        
+
         callback.add(new VarInsnNode(Opcodes.ALOAD, callback.marshallVar));
         callback.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, callback.target.callbackInfoClass, CallbackInfo.getIsCancelledMethodName(),
                 CallbackInfo.getIsCancelledMethodSig(), false));
@@ -508,7 +508,7 @@ public class CallbackInjector extends Injector {
 
     /**
      * Inject the appropriate return code for the method type
-     * 
+     *
      * @param callback callback handle
      */
     protected void injectReturnCode(final Callback callback) {
@@ -528,10 +528,10 @@ public class CallbackInjector extends Injector {
             callback.add(new InsnNode(callback.target.returnType.getOpcode(Opcodes.IRETURN)));
         }
     }
-    
+
     /**
      * Explicit to avoid creation of synthetic accessor
-     * 
+     *
      * @return true if the target method is static
      */
     protected boolean isStatic() {
