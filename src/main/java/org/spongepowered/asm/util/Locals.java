@@ -138,7 +138,7 @@ public class Locals {
                 FrameNode frameNode = (FrameNode) insn;
 
                 // localPos tracks the location in the frame node's locals list, which doesn't leave space for TOP entries
-                for (int localPos = 0, framePos = 0; framePos < frame.length; framePos++, localPos++) {
+                for (int localPos = 0, framePos = 0; framePos < frameNode.local.size(); framePos++, localPos++) {
                     // Get the local at the current position in the FrameNode's locals list
                     final Object localType = (localPos < frameNode.local.size()) ? frameNode.local.get(localPos) : null;
 
